@@ -1,4 +1,5 @@
 import io
+import time
 
 import requests
 import streamlit as st
@@ -11,30 +12,53 @@ import plotly.express as px
 st.set_page_config(page_title="영화 데이터 그래프 도감 2 - 분포와 관계", layout="wide")
 st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 
-DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
+RAW_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
+# raw.githubusercontent.com 이 막혔을 때를 대비한 jsDelivr CDN 미러
+MIRROR_URL = "https://cdn.jsdelivr.net/gh/greatsong/modudata@main/data/kobis_movies.csv"
 
 
-@st.cache_data
-def load_data(url: str) -> pd.DataFrame:
-    # GitHub raw 서버가 기본 urllib User-Agent 요청을 막는 경우가 있어
-    # requests로 직접 받아온 뒤 pandas에 넘겨준다.
+@st.cache_data(show_spinner="데이터를 불러오는 중...")
+def load_data() -> pd.DataFrame:
     headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers, timeout=10)
-    response.raise_for_status()
-    df = pd.read_csv(io.StringIO(response.text))
+    last_error = None
 
-    # 장르 열에 세로막대(|) 기호로 여러 장르가 적힌 경우 첫 번째 장르만 사용
-    if "genre" in df.columns:
-        df["genre"] = df["genre"].astype(str).str.split("|").str[0].str.strip()
+    # raw URL과 미러 URL을 각각 최대 3번씩 시도한다.
+    for url in (RAW_URL, MIRROR_URL):
+        for attempt in range(3):
+            try:
+                response = requests.get(url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    df = pd.read_csv(io.StringIO(response.text))
 
-    # 개봉일(여덟 자리 숫자) -> 날짜형으로 변환
-    if "openDt" in df.columns:
-        df["openDt"] = pd.to_datetime(df["openDt"], format="%Y%m%d", errors="coerce")
+                    # 장르 열에 세로막대(|) 기호로 여러 장르가 적힌 경우 첫 번째 장르만 사용
+                    if "genre" in df.columns:
+                        df["genre"] = (
+                            df["genre"].astype(str).str.split("|").str[0].str.strip()
+                        )
 
-    return df
+                    # 개봉일(여덟 자리 숫자) -> 날짜형으로 변환
+                    if "openDt" in df.columns:
+                        df["openDt"] = pd.to_datetime(
+                            df["openDt"], format="%Y%m%d", errors="coerce"
+                        )
+
+                    return df
+                else:
+                    last_error = f"{url} -> 상태 코드 {response.status_code}"
+            except requests.exceptions.RequestException as e:
+                last_error = f"{url} -> {e}"
+            time.sleep(1.5)
+
+    # 모든 시도가 실패한 경우: 원인을 화면에 그대로 보여주고 앱을 멈춘다.
+    st.error(
+        "데이터를 불러오지 못했습니다. GitHub 서버가 일시적으로 요청을 막았을 수 있어요 "
+        "(예: 요청 과다로 인한 접속 제한). 잠시 후 새로고침하거나 아래 오류 내용을 확인해 주세요."
+    )
+    st.code(last_error)
+    st.stop()
 
 
-df = load_data(DATA_URL)
+df = load_data()
 
 with st.expander("원본 데이터 미리보기"):
     st.dataframe(df, use_container_width=True)
