@@ -1,3 +1,6 @@
+import io
+
+import requests
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -13,7 +16,12 @@ DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis
 
 @st.cache_data
 def load_data(url: str) -> pd.DataFrame:
-    df = pd.read_csv(url)
+    # GitHub raw 서버가 기본 urllib User-Agent 요청을 막는 경우가 있어
+    # requests로 직접 받아온 뒤 pandas에 넘겨준다.
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers, timeout=10)
+    response.raise_for_status()
+    df = pd.read_csv(io.StringIO(response.text))
 
     # 장르 열에 세로막대(|) 기호로 여러 장르가 적힌 경우 첫 번째 장르만 사용
     if "genre" in df.columns:
@@ -61,6 +69,31 @@ fig1.update_layout(
 )
 
 st.plotly_chart(fig1, use_container_width=True)
+
+st.markdown("**이 그래프로 알 수 있는 것:** ")
+
+st.divider()
+
+# ------------------------------------------------------------
+# 그래프 2. 장르 안 영화 - 트리맵 (크기: 총 관객)
+# ------------------------------------------------------------
+st.header("2. 장르별 영화 총 관객 트리맵")
+
+treemap_df = df[["genre", "movieNm", "total_audi"]].dropna(subset=["total_audi"])
+
+fig2 = px.treemap(
+    treemap_df,
+    path=[px.Constant("전체"), "genre", "movieNm"],
+    values="total_audi",
+)
+fig2.update_traces(
+    hovertemplate="<b>%{label}</b><br>총 관객: %{value:,.0f}명<extra></extra>",
+)
+fig2.update_layout(
+    margin=dict(t=30, b=30, l=10, r=10),
+)
+
+st.plotly_chart(fig2, use_container_width=True)
 
 st.markdown("**이 그래프로 알 수 있는 것:** ")
 
