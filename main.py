@@ -134,3 +134,28 @@ with st.container(border=True):
     )
 
     insight_box("hist_total_audi")
+
+# ───────────── 구역 4: 개봉일 스크린수 vs 총 관객 산점도 ─────────────
+with st.container(border=True):
+    st.header("④ 개봉일 스크린수와 총 관객의 관계")
+
+    scatter_df = df.dropna(subset=["first_scrn", "total_audi"])
+
+    fig4 = px.scatter(
+        scatter_df,
+        x="first_scrn",
+        y="total_audi",
+        color="genre",
+        hover_name="movieNm",
+        hover_data={"genre": True, "first_scrn": ":,", "total_audi": ":,"},
+        labels={
+            "first_scrn": "개봉일 스크린수(개)",
+            "total_audi": "총 관객(명)",
+            "genre": "장르",
+        },
+    )
+    fig4.update_traces(marker=dict(size=9, opacity=0.8))
+    fig4.update_layout(margin=dict(t=20, b=20, l=20, r=20), height=550)
+    st.plotly_chart(fig4, use_container_width=True)
+
+    insight_box("scatter_scrn_audi")
