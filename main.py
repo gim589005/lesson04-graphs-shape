@@ -230,3 +230,27 @@ with st.container(border=True):
     st.plotly_chart(fig6, use_container_width=True)
 
     insight_box("bubble_scrn_audi")
+
+# ───────────── 구역 7: 제작 국가 → 장르 선버스트 (칸 크기 = 영화 편수) ─────────────
+with st.container(border=True):
+    st.header("⑦ 제작 국가에서 장르로 (칸 크기 = 영화 편수)")
+
+    sun_df = df.copy()
+    sun_df["nation"] = sun_df["nation"].fillna("미분류").astype(str).str.strip()
+    sun_counts = (
+        sun_df.groupby(["nation", "genre"]).size().reset_index(name="count")
+    )
+
+    fig7 = px.sunburst(
+        sun_counts,
+        path=["nation", "genre"],
+        values="count",
+    )
+    fig7.update_traces(
+        hovertemplate="%{label}<br>%{value}편<extra></extra>",
+        textinfo="label",
+    )
+    fig7.update_layout(margin=dict(t=20, b=20, l=20, r=20), height=650)
+    st.plotly_chart(fig7, use_container_width=True)
+
+    insight_box("sunburst_nation_genre")
