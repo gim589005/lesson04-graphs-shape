@@ -1,3 +1,5 @@
+import math
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -87,3 +89,48 @@ with st.container(border=True):
     st.plotly_chart(fig2, use_container_width=True)
 
     insight_box("treemap_genre_movie")
+
+# ───────────── 구역 3: 총 관객 히스토그램 ─────────────
+with st.container(border=True):
+    st.header("③ 총 관객 히스토그램")
+
+    hist_df = df.dropna(subset=["total_audi"])
+    max_audi = hist_df["total_audi"].max()
+
+    # 구간 너비: 대략 20개 구간이 되도록 보기 좋은 숫자로 맞춤
+    raw = max_audi / 20
+    unit = 10 ** math.floor(math.log10(raw))
+    bin_size = math.ceil(raw / unit) * unit
+    n_bins = int(max_audi // bin_size) + 1
+    edges = [i * bin_size for i in range(n_bins + 1)]
+
+    fig3 = go.Figure(
+        go.Histogram(
+            x=hist_df["total_audi"],
+            xbins=dict(start=0, end=n_bins * bin_size, size=bin_size),
+            hovertemplate="구간 시작 %{x:,}명<br>%{y}편<extra></extra>",
+        )
+    )
+    fig3.update_layout(
+        margin=dict(t=20, b=20, l=20, r=20),
+        height=450,
+        xaxis_title="총 관객(명)",
+        yaxis_title="영화 편수",
+        bargap=0.05,
+    )
+    st.plotly_chart(fig3, use_container_width=True)
+
+    # 가장 많은 영화가 몰린 구간 / 관객이 가장 많은 영화
+    counts = pd.cut(hist_df["total_audi"], bins=edges, right=False).value_counts().sort_index()
+    top_bin = counts.idxmax()
+    top_count = int(counts.max())
+    top_ratio = top_count / len(hist_df) * 100
+    best = hist_df.loc[hist_df["total_audi"].idxmax()]
+
+    st.markdown(
+        f"- 가장 많은 영화가 몰린 구간: **{top_bin.left:,.0f}명 이상 {top_bin.right:,.0f}명 미만** "
+        f"({top_count}편, 전체의 {top_ratio:.1f}%)\n"
+        f"- 관객이 가장 많은 영화: **{best['movieNm']}** ({best['total_audi']:,.0f}명)"
+    )
+
+    insight_box("hist_total_audi")
