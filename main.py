@@ -5,7 +5,7 @@ import plotly.express as px
 st.set_page_config(page_title="영화 데이터 그래프 도감 2 - 분포와 관계", layout="wide")
 st.title("영화 데이터 그래프 도감 2 - 분포와 관계")
 
-DATA_URL = "https://raw.githubusercontent.com/greatsong/modudata/main/data/kobis_movies.csv"
+https://raw.githubusercontent.com/happykth/data/main/kobis_movies.csv
 
 
 @st.cache_data
