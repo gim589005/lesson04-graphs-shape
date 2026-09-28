@@ -159,3 +159,39 @@ with st.container(border=True):
     st.plotly_chart(fig4, use_container_width=True)
 
     insight_box("scatter_scrn_audi")
+
+# ───────────── 구역 5: 장르별 총 관객 상자 그림 (10편 이상 장르) ─────────────
+with st.container(border=True):
+    st.header("⑤ 장르별 총 관객 분포 (영화 10편 이상인 장르)")
+
+    box_base = df.dropna(subset=["total_audi"])
+    genre_n = box_base["genre"].value_counts()
+    big_genres = genre_n[genre_n >= 10].index.tolist()  # 편수 많은 순
+
+    if not big_genres:
+        st.warning("영화가 10편 이상인 장르가 없어서 그래프를 그리지 못했습니다.")
+    else:
+        box_df = box_base[box_base["genre"].isin(big_genres)]
+
+        fig5 = px.box(
+            box_df,
+            x="genre",
+            y="total_audi",
+            color="genre",
+            points="outliers",
+            hover_name="movieNm",
+            category_orders={"genre": big_genres},
+            labels={"genre": "장르", "total_audi": "총 관객(명)"},
+        )
+        fig5.update_layout(
+            margin=dict(t=20, b=20, l=20, r=20),
+            height=550,
+            showlegend=False,
+        )
+        st.plotly_chart(fig5, use_container_width=True)
+        st.caption(
+            "대상 장르(편수): "
+            + ", ".join(f"{g} {genre_n[g]}편" for g in big_genres)
+        )
+
+    insight_box("box_genre_audi")
