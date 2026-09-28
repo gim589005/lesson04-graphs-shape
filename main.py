@@ -254,3 +254,26 @@ with st.container(border=True):
     st.plotly_chart(fig7, use_container_width=True)
 
     insight_box("sunburst_nation_genre")
+
+# ───────────── 구역 8: 10위권 체류일 vs 총 관객 산점도 ─────────────
+with st.container(border=True):
+    st.header("10위권에 오래 머문 영화는 총 관객도 많은가")
+
+    stay_df = df.dropna(subset=["days_in_top10", "total_audi"])
+
+    fig8 = px.scatter(
+        stay_df,
+        x="days_in_top10",
+        y="total_audi",
+        hover_name="movieNm",
+        hover_data={"days_in_top10": ":,", "total_audi": ":,"},
+        labels={
+            "days_in_top10": "10위권에 머문 날수(일)",
+            "total_audi": "총 관객(명)",
+        },
+    )
+    fig8.update_traces(marker=dict(size=9, opacity=0.75))
+    fig8.update_layout(margin=dict(t=20, b=20, l=20, r=20), height=550)
+    st.plotly_chart(fig8, use_container_width=True)
+
+    insight_box("scatter_days_audi")
