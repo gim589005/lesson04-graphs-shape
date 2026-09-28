@@ -195,3 +195,38 @@ with st.container(border=True):
         )
 
     insight_box("box_genre_audi")
+
+# ───────────── 구역 6: 버블 그래프 (점 크기 = 첫 주 관객) ─────────────
+with st.container(border=True):
+    st.header("⑥ 스크린수·총 관객 버블 그래프 (점 크기 = 첫 주 관객)")
+
+    bubble_df = df.dropna(subset=["first_scrn", "total_audi", "first_week_audi"])
+    # 점 크기는 0보다 커야 그려지므로 첫 주 관객이 0 이하인 영화는 제외
+    bubble_df = bubble_df[bubble_df["first_week_audi"] > 0]
+
+    fig6 = px.scatter(
+        bubble_df,
+        x="first_scrn",
+        y="total_audi",
+        size="first_week_audi",
+        color="genre",
+        hover_name="movieNm",
+        hover_data={
+            "genre": True,
+            "first_scrn": ":,",
+            "total_audi": ":,",
+            "first_week_audi": ":,",
+        },
+        size_max=40,
+        labels={
+            "first_scrn": "개봉일 스크린수(개)",
+            "total_audi": "총 관객(명)",
+            "first_week_audi": "첫 주 관객(명)",
+            "genre": "장르",
+        },
+    )
+    fig6.update_traces(marker=dict(opacity=0.6, line=dict(width=0.5, color="white")))
+    fig6.update_layout(margin=dict(t=20, b=20, l=20, r=20), height=600)
+    st.plotly_chart(fig6, use_container_width=True)
+
+    insight_box("bubble_scrn_audi")
